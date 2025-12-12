@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Отчёт · Успеваемость за семестр</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}">
+</head>
+<body>
+<div class="page-wrapper">
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Отчёт по студенту</span></div>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/student/dashboard}">← Назад в дашборд</a>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="main-header">
+            <div>
+                <div class="main-title">Отчёт за семестр</div>
+                <div class="main-subtitle">
+                    Студент: <span th:text="${student.fullname}">ФИО</span>,
+                    группа: <span th:text="${student.groupName}">Группа</span>
+                </div>
+            </div>
+            <div class="user-pill">
+                <span>Средний балл</span>
+                <span class="badge-role" th:text="${#numbers.formatDecimal(avg,1,2)}">0.00</span>
+            </div>
+        </header>
+
+        <!-- Верхние карточки -->
+        <section class="cards-grid">
+            <div class="card">
+                <div class="card-title">Средний балл</div>
+                <div class="card-value" th:text="${#numbers.formatDecimal(avg,1,2)}">0.00</div>
+                <div class="card-tag">Общий средний балл за семестр</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Посещаемость</div>
+                <div class="card-value">
+                    <span th:text="${present}">0</span> / <span th:text="${present + absent}">0</span>
+                </div>
+                <div class="card-tag">Присутствий / всего занятий</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Пропуски</div>
+                <div class="card-value" th:text="${absent}">0</div>
+                <div class="card-tag">Без учёта типа пропуска</div>
+            </div>
+        </section>
+
+        <!-- Средний балл по предметам -->
+        <section class="card table-card">
+            <div class="card-title">Средний балл по предметам</div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Предмет</th>
+                    <th>Средний балл</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${subjectAverages}">
+                    <td th:text="${entry.key}"></td>
+                    <td th:text="${#numbers.formatDecimal(entry.value,1,2)}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ❌ УБРАНО: таблица всех оценок -->
+        <!-- ❌ УБРАНО: таблица посещаемости -->
+
+    </main>
+</div>
+</body>
+</html>

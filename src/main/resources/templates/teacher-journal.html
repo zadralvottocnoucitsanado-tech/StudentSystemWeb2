@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Журнал — [[${student.fullname}]]</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}">
+    <style>
+        .n-select { padding:4px; }
+        .n-block { display:flex; gap:6px; align-items:center; }
+        input[disabled] { opacity: 0.6; background:#1e293b; color:white; font-weight:bold; }
+    </style>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Преподаватель</span></div>
+        </div>
+
+        <ul class="nav-list">
+            <li class="nav-item"><a th:href="@{/teacher/dashboard}">⬅ Назад</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="main-header">
+            <div class="main-title">
+                Журнал — <span th:text="${student.fullname}"></span>
+            </div>
+        </header>
+
+        <form th:action="@{'/teacher/students/' + ${student.id} + '/journal/save'}" method="post">
+
+            <input type="hidden" name="subject" th:value="${subject}"/>
+
+            <div style="margin-bottom: 20px;">
+                <select onchange="location='?subject=' + this.value" style="padding:6px;">
+                    <option th:each="s : ${subjects}"
+                            th:value="${s}"
+                            th:selected="${s == subject}"
+                            th:text="${s}">
+                    </option>
+                </select>
+            </div>
+
+            <!-- ==================== ТАБЛИЦА НЕДЕЛЬ ==================== -->
+            <table class="table" style="width: 80%; margin-bottom:40px;">
+                <thead>
+                <tr>
+                    <th>Неделя</th>
+                    <th>Лекция</th>
+                    <th>СРО</th>
+                    <th>Лаб. работа</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="i : ${#numbers.sequence(1,15)}">
+
+                    <td>Неделя <span th:text="${i}"></span></td>
+
+                    <!-- ========= ЛЕКЦИЯ ========= -->
+                    <td>
+                        <div class="n-block">
+
+                            <input type="text"
+                                   th:id="${'inp_week' + i + '_lecture'}"
+                                   th:name="${'week' + i + '_lecture'}"
+                                   th:value="${table['week' + i + '_lecture'] == -1 ? 'Н' : (table['week' + i + '_lecture'] == -2 ? 'Н.П' : table['week' + i + '_lecture'])}"
+                                   th:disabled="${table['week' + i + '_lecture_flag'] == 1 or table['week' + i + '_lecture_flag'] == 2}">
+
+                            <input type="hidden"
+                                   th:id="${'flag_week' + i + '_lecture'}"
+                                   th:name="${'week' + i + '_lecture_flag'}"
+                                   th:value="${table['week' + i + '_lecture_flag']}">
+
+                            <select class="n-select"
+                                    th:onchange="'handleNMark(this, \'week'+${i}+'_lecture\')'">
+                                <option value="0"
+                                        th:selected="${table['week' + i + '_lecture_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['week' + i + '_lecture_flag'] == 1}">Н</option>
+                                <option value="2"
+                                        th:selected="${table['week' + i + '_lecture_flag'] == 2}">Н.П</option>
+                            </select>
+
+                        </div>
+                    </td>
+
+                    <!-- ========= СРО ========= -->
+                    <td>
+                        <div class="n-block">
+
+                            <input type="text"
+                                   th:id="${'inp_week' + i + '_sro'}"
+                                   th:name="${'week' + i + '_sro'}"
+                                   th:value="${table['week' + i + '_sro'] == -1 ? 'Н' : (table['week' + i + '_sro'] == -2 ? 'Н.П' : table['week' + i + '_sro'])}"
+                                   th:disabled="${table['week' + i + '_sro_flag'] == 1 or table['week' + i + '_sro_flag'] == 2}">
+
+                            <input type="hidden"
+                                   th:id="${'flag_week' + i + '_sro'}"
+                                   th:name="${'week' + i + '_sro_flag'}"
+                                   th:value="${table['week' + i + '_sro_flag']}">
+
+                            <select class="n-select"
+                                    th:onchange="'handleNMark(this, \'week'+${i}+'_sro\')'">
+                                <option value="0"
+                                        th:selected="${table['week' + i + '_sro_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['week' + i + '_sro_flag'] == 1}">Н</option>
+                                <option value="2"
+                                        th:selected="${table['week' + i + '_sro_flag'] == 2}">Н.П</option>
+                            </select>
+
+                        </div>
+                    </td>
+
+                    <!-- ========= ЛАБА ========= -->
+                    <td>
+                        <div class="n-block">
+
+                            <input type="text"
+                                   th:id="${'inp_week' + i + '_lab'}"
+                                   th:name="${'week' + i + '_lab'}"
+                                   th:value="${table['week' + i + '_lab'] == -1 ? 'Н' : (table['week' + i + '_lab'] == -2 ? 'Н.П' : table['week' + i + '_lab'])}"
+                                   th:disabled="${table['week' + i + '_lab_flag'] == 1 or table['week' + i + '_lab_flag'] == 2}">
+
+                            <input type="hidden"
+                                   th:id="${'flag_week' + i + '_lab'}"
+                                   th:name="${'week' + i + '_lab_flag'}"
+                                   th:value="${table['week' + i + '_lab_flag']}">
+
+                            <select class="n-select"
+                                    th:onchange="'handleNMark(this, \'week'+${i}+'_lab\')'">
+                                <option value="0"
+                                        th:selected="${table['week' + i + '_lab_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['week' + i + '_lab_flag'] == 1}">Н</option>
+                                <option value="2"
+                                        th:selected="${table['week' + i + '_lab_flag'] == 2}">Н.П</option>
+                            </select>
+
+                        </div>
+                    </td>
+
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- ==================== РК / ЭКЗ ==================== -->
+            <table class="table" style="width:40%; margin-bottom:40px;">
+                <tbody>
+
+                <!-- РК1 -->
+                <tr>
+                    <td>РК1</td>
+                    <td>
+                        <div class="n-block">
+
+                            <input id="inp_rk1" name="rk1" type="text"
+                                   th:value="${table['rk1'] == -1 ? 'Н' : table['rk1']}"
+                                   th:disabled="${table['rk1_flag'] == 1}">
+
+                            <input type="hidden" id="flag_rk1" name="rk1_flag"
+                                   th:value="${table['rk1_flag']}">
+
+                            <select class="n-select" onchange="handleNMark(this,'rk1')">
+                                <option value="0"
+                                        th:selected="${table['rk1_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['rk1_flag'] == 1}">Н</option>
+                            </select>
+
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- РК2 -->
+                <tr>
+                    <td>РК2</td>
+                    <td>
+                        <div class="n-block">
+
+                            <input id="inp_rk2" name="rk2" type="text"
+                                   th:value="${table['rk2'] == -1 ? 'Н' : table['rk2']}"
+                                   th:disabled="${table['rk2_flag'] == 1}">
+
+                            <input type="hidden" id="flag_rk2" name="rk2_flag"
+                                   th:value="${table['rk2_flag']}">
+
+                            <select class="n-select" onchange="handleNMark(this,'rk2')">
+                                <option value="0"
+                                        th:selected="${table['rk2_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['rk2_flag'] == 1}">Н</option>
+                            </select>
+
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Экзамен -->
+                <tr>
+                    <td>Экзамен</td>
+                    <td>
+                        <div class="n-block">
+
+                            <input id="inp_exam" name="exam" type="text"
+                                   th:value="${table['exam'] == -1 ? 'Н' : table['exam']}"
+                                   th:disabled="${table['exam_flag'] == 1}">
+
+                            <input type="hidden" id="flag_exam" name="exam_flag"
+                                   th:value="${table['exam_flag']}">
+
+                            <select class="n-select" onchange="handleNMark(this,'exam')">
+                                <option value="0"
+                                        th:selected="${table['exam_flag'] == 0}">Оценка</option>
+                                <option value="1"
+                                        th:selected="${table['exam_flag'] == 1}">Н</option>
+                            </select>
+
+                        </div>
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+
+            <!-- ==================== ИТОГИ ==================== -->
+            <table class="table" style="width:40%; opacity:0.85;">
+                <tbody>
+                <tr><td>TK1</td><td th:text="${table['tk1']}"></td></tr>
+                <tr><td>TK2</td><td th:text="${table['tk2']}"></td></tr>
+                <tr><td>R1</td><td th:text="${table['r1']}"></td></tr>
+                <tr><td>R2</td><td th:text="${table['r2']}"></td></tr>
+                <tr><td>Допуск</td><td th:text="${table['dopusk']}"></td></tr>
+                <tr><td>Итоговый</td><td th:text="${table['FINAL']}"></td></tr>
+                </tbody>
+            </table>
+
+            <button class="action-btn primary" style="margin-top:20px;">
+                💾 Сохранить журнал
+            </button>
+
+        </form>
+
+    </main>
+</div>
+
+<!-- ======= JS ======= -->
+<script>
+function handleNMark(select, key) {
+
+    let input = document.getElementById("inp_" + key);
+    let flag  = document.getElementById("flag_" + key);
+
+    if (!flag) return;
+
+    const val = select.value;
+    flag.value = val;
+
+    if (input) {
+        if (val === "1") {
+            input.disabled = true;
+            input.value = "Н";
+        } else if (val === "2") {
+            input.disabled = true;
+            input.value = "Н.П";
+        } else {
+            input.disabled = false;
+            if (input.value === "Н" || input.value === "Н.П") input.value = "";
+        }
+    }
+}
+</script>
+
+</body>
+</html>

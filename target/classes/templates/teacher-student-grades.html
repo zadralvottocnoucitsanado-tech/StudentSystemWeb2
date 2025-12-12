@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Оценки студента</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}" href="/dashboard.css">
+</head>
+<body>
+<div class="page-wrapper">
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Преподаватель</span></div>
+        </div>
+
+        <div>
+            <div class="nav-section-title">Навигация</div>
+            <ul class="nav-list">
+                <li class="nav-item"><a class="active" th:href="@{/teacher/dashboard}">Назад к списку</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти из системы</a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="main-header">
+            <div>
+                <div class="main-title">Оценки студента</div>
+                <div class="main-subtitle">Добавление и просмотр оценок</div>
+            </div>
+        </header>
+
+        <section class="card table-card">
+            <div class="card-title">Добавить оценку</div>
+            <form class="form-row" th:action="@{'/teacher/students/' + ${studentId} + '/grades/add'}" method="post">
+                <input class="input" type="text" name="subject" placeholder="Предмет" required>
+                <input class="input" type="number" step="0.01" name="grade" placeholder="Оценка" required>
+                <button class="action-btn" type="submit">Сохранить</button>
+            </form>
+        </section>
+
+        <section class="card table-card">
+            <div class="card-title">Текущие оценки</div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Предмет</th>
+                    <th>Оценка</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="g : ${grades}">
+                    <td th:text="${g.id}"></td>
+                    <td th:text="${g.subject}"></td>
+                    <td th:text="${g.grade}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+</body>
+</html>

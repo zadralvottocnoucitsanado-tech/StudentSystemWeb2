@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Журнал — [[${student.fullname}]]</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}">
+
+    <style>
+        /* =================== TOP ACTION BAR =================== */
+        .top-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+            padding: 16px 22px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(8px);
+            margin-bottom: 22px;
+        }
+
+        .left-actions, .right-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .top-btn {
+            padding: 9px 16px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            color: #bfdbfe;
+            font-size: 14px;
+            transition: .15s;
+        }
+        .top-btn:hover {
+            background: #1e293b;
+        }
+
+        .top-btn.primary {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+        .top-btn.primary:hover {
+            background: #1d4ed8;
+        }
+
+        .top-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 18px;
+            background: #020617;
+            border-radius: 999px;
+            border: 1px solid #1e293b;
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+
+        .top-pill .value {
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.35);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            color: #bfdbfe;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        /* =================== JOURNAL CARDS =================== */
+
+        .section-card {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 18px;
+            padding: 22px 28px;
+            margin-bottom: 28px;
+            box-shadow: 0 18px 35px rgba(15,23,42,0.6);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: "";
+            width: 6px;
+            height: 18px;
+            border-radius: 4px;
+            background: #3b82f6;
+        }
+
+        /* TABLE */
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .grid-table th {
+            color: #9ca3af;
+            font-size: 13px;
+            padding: 8px 0;
+            border-bottom: 1px solid #1f2937;
+            text-align: center;
+        }
+
+        .grid-table td {
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #1f2937;
+            text-align: center;
+        }
+
+        /* SCORE COLORS */
+        .score       { color: #60a5fa; font-weight: 600; }
+        .score-miss  { color: #ef4444; font-weight: 700; } /* Н */
+        .score-np    { color: #6b7280; font-weight: 600; opacity: 0.85; } /* Н.П */
+
+        /* SELECT */
+        .selector {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: #e5e7eb;
+            width: 320px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .label {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <div class="main">
+
+        <!-- ===================== TOP BAR ===================== -->
+        <div class="top-actions">
+
+            <div class="left-actions">
+                <a href="/student/dashboard" class="top-btn">← Назад</a>
+
+                <div class="top-pill">
+                    Средний балл:
+                    <span class="value" th:text="${avg}">0.0</span>
+                </div>
+            </div>
+
+            <div class="right-actions">
+                <a href="/student/report" class="top-btn primary">📄 Отчёт за семестр</a>
+            </div>
+
+        </div>
+
+        <!-- ===================== SUBJECT SELECT ===================== -->
+
+        <div class="label">Предмет</div>
+
+        <form method="get" action="/student/journal">
+            <select name="subject" class="selector" onchange="this.form.submit()">
+                <option th:each="s : ${subjects}"
+                        th:value="${s}"
+                        th:selected="${s == subject}"
+                        th:text="${s}">
+                </option>
+            </select>
+        </form>
+
+
+        <!-- ===================== NED 1–7 ===================== -->
+
+        <div class="section-card">
+            <div class="section-title">Недели 1–7</div>
+
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th th:each="i : ${#numbers.sequence(1,7)}" th:text="${i}"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                <!-- Лекции -->
+                <tr>
+                    <td>Лекция</td>
+                    <td th:each="i : ${#numbers.sequence(1,7)}">
+                        <span th:with="v=${table['week' + i + '_lecture']}"
+                              th:class="${v == -1} ? 'score-miss' 
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                <!-- СРО -->
+                <tr>
+                    <td>СРО</td>
+                    <td th:each="i : ${#numbers.sequence(1,7)}">
+                        <span th:with="v=${table['week' + i + '_sro']}"
+                              th:class="${v == -1} ? 'score-miss'
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                <!-- Лаб -->
+                <tr>
+                    <td>Лаб. работа</td>
+                    <td th:each="i : ${#numbers.sequence(1,7)}">
+                        <span th:with="v=${table['week' + i + '_lab']}"
+                              th:class="${v == -1} ? 'score-miss'
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- ===================== ТК1 ===================== -->
+
+        <div class="section-card">
+            <div class="section-title">Промежуточный контроль 1</div>
+
+            <table class="grid-table">
+                <thead>
+                <tr>
+                    <th>ТК1</th>
+                    <th>РК1</th>
+                    <th>Р1</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <td><span class="score" th:text="${table['tk1']}"></span></td>
+                    <td><span class="score" th:text="${table['rk1']}"></span></td>
+                    <td><span class="score" th:text="${table['r1']}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- ===================== NED 8–15 ===================== -->
+
+        <div class="section-card">
+            <div class="section-title">Недели 8–15</div>
+
+            <table class="grid-table">
+                <thead>
+                <tr>
+                    <th>Тип</th>
+                    <th th:each="i : ${#numbers.sequence(8,15)}" th:text="${i}"></th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <tr>
+                    <td>Лекция</td>
+                    <td th:each="i : ${#numbers.sequence(8,15)}">
+                        <span th:with="v=${table['week' + i + '_lecture']}"
+                              th:class="${v == -1} ? 'score-miss'
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>СРО</td>
+                    <td th:each="i : ${#numbers.sequence(8,15)}">
+                        <span th:with="v=${table['week' + i + '_sro']}"
+                              th:class="${v == -1} ? 'score-miss'
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Лаб. работа</td>
+                    <td th:each="i : ${#numbers.sequence(8,15)}">
+                        <span th:with="v=${table['week' + i + '_lab']}"
+                              th:class="${v == -1} ? 'score-miss'
+                                       : (${v == -2} ? 'score-np' : 'score')"
+                              th:text="${v == -1 ? 'Н' : (v == -2 ? 'Н.П' : v)}"></span>
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- ===================== ТК2 ===================== -->
+
+        <div class="section-card">
+            <div class="section-title">Промежуточный контроль 2</div>
+
+            <table class="grid-table">
+                <thead>
+                <tr>
+                    <th>ТК2</th>
+                    <th>РК2</th>
+                    <th>Р2</th>
+                    <th>Допуск</th>
+                    <th>Экзамен</th>
+                    <th>Итог</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <td><span class="score" th:text="${table['tk2']}"></span></td>
+                    <td><span class="score" th:text="${table['rk2']}"></span></td>
+                    <td><span class="score" th:text="${table['r2']}"></span></td>
+                    <td><span class="score" th:text="${table['dopusk']}"></span></td>
+                    <td><span class="score" th:text="${table['exam']}"></span></td>
+                    <td><span class="score" th:text="${table['FINAL']}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

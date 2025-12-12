@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Студент · Дашборд</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Верхний блок */
+        .top-info {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .top-pill {
+            display: flex;
+            align-items: center;
+            background: #020617;
+            border: 1px solid #1e293b;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 15px;
+            gap: 8px;
+        }
+
+        .top-pill-value {
+            background: rgba(59,130,246,0.15);
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(59,130,246,0.3);
+            font-weight: 600;
+            color: #bfdbfe;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        /* Кнопки */
+        .journal-btn, .top-btn {
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: 0.15s;
+        }
+
+        .journal-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+        }
+        .journal-btn:hover {
+            background: #1e293b;
+        }
+
+        .top-btn {
+            background: #2563eb;
+            color: #fff;
+        }
+        .top-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Сетка графиков */
+        .charts-grid {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 320px;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: #020617;
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid #1e293b;
+            box-shadow: 0 12px 25px rgba(15, 23, 42, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Личный кабинет</span></div>
+        </div>
+
+        <div class="last-login">
+            Последний вход:<br>
+            <span th:text="${lastLogin}">Сегодня, 12:00</span>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- Главная -->
+    <main class="main">
+
+        <header class="main-header">
+            <div>
+                <div class="main-title" th:text="${student.fullname}">Имя студента</div>
+                <div class="main-subtitle">
+                    Группа: <span th:text="${student.groupName}"></span>
+                </div>
+            </div>
+
+            <div class="top-info">
+                <div class="top-pill">
+                    Средний балл:
+                    <span class="top-pill-value" th:text="${avg}">0.00</span>
+                </div>
+
+                <a class="journal-btn" th:href="@{/student/journal}">Журнал</a>
+                <a class="top-btn" th:href="@{/student/report}">Отчёт</a>
+            </div>
+        </header>
+
+        <!-- Карточки -->
+        <section class="cards-grid">
+            <div class="card">
+                <div class="card-title">Всего оценок</div>
+                <div class="card-value" th:text="${gradesCount}">0</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Записей прогресса</div>
+                <div class="card-value" th:text="${progressCount}">0</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Посещаемость</div>
+                <div class="card-value" th:text="${attendancePercent + '%'}">0%</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Средний балл</div>
+                <div class="card-value" th:text="${avg}">0.00</div>
+            </div>
+        </section>
+
+        <!-- ГРАФИКИ -->
+        <section class="charts-grid">
+
+            <div class="chart-card">
+                <div class="card-title">Средний балл по предметам</div>
+                <canvas id="subjectsBarChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-title">Посещаемость</div>
+                <canvas id="attendanceChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-title">Распределение оценок</div>
+                <canvas id="gradesPieChart"></canvas>
+            </div>
+
+            <div></div> <!-- пустой блок для симметрии -->
+
+        </section>
+
+    </main>
+</div>
+
+<!-- ================= JS ГРАФИКИ ================= -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+const subjectLabels = /*[[${subjectLabels}]]*/ [];
+const subjectValues = /*[[${subjectValues}]]*/ [];
+
+const present = /*[[${present}]]*/ 0;
+const absent = /*[[${absent}]]*/ 0;
+
+const grades = /*[[${grades}]]*/ [];
+
+/* подсчёт распределения */
+let high = 0, mid = 0, low = 0, fail = 0;
+grades.forEach(g => {
+    let v = g.grade ?? 0;
+    if (v >= 90) high++;
+    else if (v >= 75) mid++;
+    else if (v >= 60) low++;
+    else fail++;
+});
+
+/* BAR */
+new Chart(document.getElementById('subjectsBarChart'), {
+    type: 'bar',
+    data: {
+        labels: subjectLabels,
+        datasets: [{
+            data: subjectValues,
+            backgroundColor: "rgba(59,130,246,0.5)",
+            borderColor: "rgba(59,130,246,1)"
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } }
+    }
+});
+
+/* DONUT (фикс: aspectRatio = 1) */
+new Chart(document.getElementById('attendanceChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Присутствия', 'Пропуски'],
+        datasets: [{
+            data: [present, absent],
+            backgroundColor: ["#0ea5e9", "#ef4444"]
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false,
+        aspectRatio: 1
+    }
+});
+
+/* PIE (фикс: aspectRatio = 1) */
+new Chart(document.getElementById('gradesPieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['90+', '75-89', '60-74', '<60'],
+        datasets: [{ data: [high, mid, low, fail] }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false,
+        aspectRatio: 1
+    }
+});
+/*]]>*/
+</script>
+
+</body>
+</html>

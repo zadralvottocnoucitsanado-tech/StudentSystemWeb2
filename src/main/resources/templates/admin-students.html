@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ · Студенты</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}" href="/dashboard.css">
+</head>
+<body>
+<div class="page-wrapper">
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Администратор</span></div>
+        </div>
+
+        <div>
+            <div class="nav-section-title">Навигация</div>
+            <ul class="nav-list">
+                <li class="nav-item"><a th:href="@{/admin/dashboard}">Общий обзор</a></li>
+                <li class="nav-item"><a class="active" th:href="@{/admin/students}">Студенты</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти из системы</a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="main-header">
+            <div>
+                <div class="main-title">Список студентов</div>
+                <div class="main-subtitle">Добавление и удаление студентов</div>
+            </div>
+            <div class="user-pill">
+                <span>Режим управления</span>
+            </div>
+        </header>
+
+        <section class="card table-card">
+            <div class="card-title">Добавить студента</div>
+            <form class="form-row" method="post" th:action="@{/admin/students/add}">
+                <input class="input" type="text" name="fullname" placeholder="ФИО" required>
+                <input class="input" type="text" name="groupName" placeholder="Группа" required>
+                <button class="action-btn" type="submit">Добавить</button>
+            </form>
+        </section>
+
+        <section class="card table-card">
+            <div class="card-title">Текущие студенты</div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Группа</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${students}">
+                    <td th:text="${s.id}"></td>
+                    <td th:text="${s.fullname}"></td>
+                    <td th:text="${s.groupName}"></td>
+                    <td>
+                        <form th:action="@{'/admin/students/delete/' + ${s.id}}" method="post"
+                              onsubmit="return confirm('Удалить студента?');">
+                            <button class="action-btn secondary" type="submit">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+</body>
+</html>

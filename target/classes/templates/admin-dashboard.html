@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ · Дашборд</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}" href="/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Администратор</span></div>
+        </div>
+
+        <div>
+            <div class="nav-section-title">Навигация</div>
+            <ul class="nav-list">
+                <li class="nav-item"><a class="active" th:href="@{/admin/dashboard}">Общий обзор</a></li>
+                <li class="nav-item"><a th:href="@{/admin/students}">Студенты</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти из системы</a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Header -->
+        <header class="main-header">
+            <div>
+                <div class="main-title">Общий дашборд</div>
+                <div class="main-subtitle">Краткий обзор по студентам и успеваемости</div>
+            </div>
+            <div class="user-pill">
+                <span>Роль: администратор</span>
+                <span class="badge-role">ADMIN</span>
+            </div>
+        </header>
+
+        <!-- Top Cards -->
+        <section class="cards-grid">
+
+            <!-- Total students -->
+            <div class="card">
+                <div class="card-title">Всего студентов</div>
+                <div class="card-value" th:text="${#lists.size(students)}">0</div>
+                <div class="card-tag">Количество записей в системе</div>
+            </div>
+
+            <!-- Global average -->
+            <div class="card">
+                <div class="card-title">Глобальный средний балл</div>
+                <div class="card-value"
+                     th:text="${#numbers.formatDecimal(globalAvg, 1, 2)}">0.00</div>
+                <div class="card-tag">Средний балл по всем студентам</div>
+            </div>
+
+            <!-- Top students -->
+            <div class="card">
+                <div class="card-title">Топ-5</div>
+                <div class="card-tag">Лучшие студенты</div>
+                <ul style="margin-top:8px;font-size:13px;list-style:none;">
+                    <li th:each="r : ${top}">
+                        <span th:text="${r.student.fullname}"></span>
+                        <span style="color:#9ca3af;"> · </span>
+                        <span th:text="${#numbers.formatDecimal(r.avg,1,2)}"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Worst students -->
+            <div class="card">
+                <div class="card-title">Риск-зона</div>
+                <div class="card-tag">Студенты с низким средним баллом</div>
+                <ul style="margin-top:8px;font-size:13px;list-style:none;">
+                    <li th:each="r : ${worst}">
+                        <span th:text="${r.student.fullname}"></span>
+                        <span style="color:#9ca3af;"> · </span>
+                        <span th:text="${#numbers.formatDecimal(r.avg,1,2)}"></span>
+                    </li>
+                </ul>
+            </div>
+
+        </section>
+
+        <!-- Group averages chart -->
+        <section class="card chart-card">
+            <div class="card-title">Средний балл по группам</div>
+            <canvas id="groupAvgChart"></canvas>
+        </section>
+
+        <!-- Table: students -->
+        <section class="card table-card">
+            <div class="card-title">Студенты и средний балл</div>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Группа</th>
+                    <th>Средний балл</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="s : ${students}">
+                    <td th:text="${s.id}"></td>
+                    <td th:text="${s.fullname}"></td>
+                    <td th:text="${s.groupName}"></td>
+
+                    <td>
+                        <span th:if="${avgByStudent.containsKey(s.id)}"
+                              th:text="${#numbers.formatDecimal(avgByStudent[s.id], 1, 2)}">0</span>
+
+                        <span th:if="${!avgByStudent.containsKey(s.id)}"
+                              class="tag-muted">нет оценок</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+        </section>
+
+    </main>
+</div>
+
+<!-- JS -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    const groupAverages = /*[[${groupAverages}]]*/ {};
+    const labels = Object.keys(groupAverages);
+    const values = Object.values(groupAverages);
+
+    const ctx = document.getElementById('groupAvgChart');
+    if (ctx && labels.length > 0) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Средний балл',
+                    data: values
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { labels: { color: '#e5e7eb', font: { size: 11 } } }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af', font: { size: 10 } },
+                        grid: { color: 'rgba(55,65,81,0.3)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#9ca3af', font: { size: 10 } },
+                        grid: { color: 'rgba(55,65,81,0.35)' }
+                    }
+                }
+            }
+        });
+    }
+/*]]>*/
+</script>
+
+</body>
+</html>

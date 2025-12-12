@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Аналитика — Преподаватель</title>
+    <link rel="stylesheet" th:href="@{/dashboard.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        #subjectChart, #groupChart, #histChart {
+            max-height: 420px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 350px !important;
+        }
+    </style>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">Student System<span></span></div>
+
+        <div>
+            <div class="nav-section-title">Навигация</div>
+            <ul class="nav-list">
+                <li class="nav-item"><a th:href="@{/teacher/dashboard}">Студенты и оценки</a></li>
+                <li class="nav-item"><a class="active" th:href="@{/teacher/analytics}">Аналитика</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">© 2025 Учёт студентов</div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <div class="main-header">
+            <div>
+                <div class="main-title">Аналитика академической успеваемости</div>
+                <div class="main-subtitle">Глубокий анализ итоговых оценок студентов</div>
+            </div>
+
+            <div class="user-pill">
+                <span class="badge-role">Teacher</span>
+                <a th:href="@{/logout}" class="logout-link">Выйти</a>
+            </div>
+        </div>
+
+        <!-- Если финалов нет -->
+        <div th:if="${!hasFinals}" style="margin-top:20px;">
+            <div class="card" style="text-align:center;">
+                <div class="card-title">Аналитика недоступна</div>
+                <div class="card-value" style="font-size:16px;">
+                    Чтобы открыть аналитику, выставьте все финальные оценки (FINAL).
+                </div>
+            </div>
+        </div>
+
+        <!-- ЕСЛИ ФИНАЛЫ ЕСТЬ -->
+        <div th:if="${hasFinals}">
+
+            <!-- TOP CARDS -->
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-title">Средний балл группы</div>
+                    <div class="card-value" th:text="${groupAvg}"></div>
+                    <div class="card-tag">По всем студентам</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Студентов с итогами</div>
+                    <div class="card-value" th:text="${studentsWithFinals}"></div>
+                    <div class="card-tag">FINAL выставлен</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Предметов в системе</div>
+                    <div class="card-value" th:text="${subjectsCount}"></div>
+                    <div class="card-tag">Активные дисциплины</div>
+                </div>
+            </div>
+
+            <!-- LOW + ABSENT -->
+            <div class="cards-grid" style="margin-top:20px;">
+
+                <!-- Низкая успеваемость -->
+                <div class="card">
+                    <div class="card-title">Студенты с низкой успеваемостью</div>
+                    <div class="card-tag">Средний FINAL ниже 60</div>
+
+                    <table class="table" style="margin-top:8px;">
+                        <thead>
+                        <tr><th>ФИО</th><th>Группа</th><th>Средний</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${lowStudents}">
+                            <td th:text="${r.fullname}"></td>
+                            <td th:text="${r.groupName}"></td>
+                            <td th:text="${#numbers.formatDecimal(r.finalScore,1,2)}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Прогульщики -->
+                <div class="card">
+                    <div class="card-title">Прогульщики</div>
+                    <div class="card-tag">По данным посещаемости</div>
+
+                    <table class="table" style="margin-top:8px;">
+                        <thead>
+                        <tr><th>ФИО</th><th>Группа</th><th>Пропусков</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${absentLeaders}">
+                            <td th:text="${r.fullname}"></td>
+                            <td th:text="${r.groupName}"></td>
+                            <td th:text="${r.abs}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- SUBJECT STATS -->
+            <div class="card" style="margin-top:20px;">
+                <div class="card-title">Средний балл по предметам</div>
+                <canvas id="subjectChart"></canvas>
+            </div>
+
+            <!-- ➕ НОВЫЕ ГРАФИКИ -->
+            <div class="cards-grid" style="margin-top:20px; grid-template-columns: 1fr 1fr;">
+
+                <!-- GROUP AVERAGES -->
+                <div class="card">
+                    <div class="card-title">Средний балл по группам</div>
+                    <canvas id="groupChart"></canvas>
+                </div>
+
+                <!-- SCORE HISTOGRAM -->
+                <div class="card">
+                    <div class="card-title">Распределение итоговых баллов</div>
+                    <canvas id="histChart"></canvas>
+                </div>
+            </div>
+
+            <!-- TOP STUDENTS -->
+            <div class="table-card" style="margin-top:20px;">
+                <div class="card-title">Топ-5 лучших студентов</div>
+
+                <table class="table">
+                    <thead>
+                    <tr><th>Студент</th><th>Группа</th><th>Итоговый балл</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${topStudents}">
+                        <td th:text="${s.fullname}"></td>
+                        <td th:text="${s.groupName}"></td>
+                        <td th:text="${s.finalScore}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- LOW STUDENTS -->
+            <div class="table-card" style="margin-top:20px;">
+                <div class="card-title">Топ-5 слабых студентов</div>
+
+                <table class="table">
+                    <thead>
+                    <tr><th>Студент</th><th>Группа</th><th>Итоговый балл</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${lowStudents}">
+                        <td th:text="${s.fullname}"></td>
+                        <td th:text="${s.groupName}"></td>
+                        <td th:text="${s.finalScore}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================= CHARTS ========================= -->
+
+<script th:inline="javascript">
+
+/* ===== SUBJECT CHART ===== */
+const subjLabels = [[${subjectsLabels}]];
+const subjValues = [[${subjectsValues}]];
+
+new Chart(document.getElementById("subjectChart"), {
+    type: "bar",
+    data: {
+        labels: subjLabels,
+        datasets: [{
+            label: "Средний балл",
+            data: subjValues,
+            backgroundColor: "rgba(0,123,255,0.5)",
+            borderColor: "rgba(0,123,255,1)",
+            borderWidth: 1
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }},
+        scales: { y: { beginAtZero: true, max: 100 }}
+    }
+});
+
+/* ===== GROUP AVERAGES ===== */
+const groupLabels = [[${groupLabels}]];
+const groupValues = [[${groupValues}]];
+
+new Chart(document.getElementById("groupChart"), {
+    type: "bar",
+    data: {
+        labels: groupLabels,
+        datasets: [{
+            label: "Средний балл группы",
+            data: groupValues,
+            backgroundColor: "rgba(40,167,69,0.5)",
+            borderColor: "rgba(40,167,69,1)",
+            borderWidth: 1
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 }}
+    }
+});
+
+/* ===== SCORE HISTOGRAM ===== */
+const histLabels = [[${histLabels}]];
+const histValues = [[${histValues}]];
+
+new Chart(document.getElementById("histChart"), {
+    type: "bar",
+    data: {
+        labels: histLabels,
+        datasets: [{
+            label: "Количество студентов",
+            data: histValues,
+            backgroundColor: "rgba(255,193,7,0.5)",
+            borderColor: "rgba(255,193,7,1)",
+            borderWidth: 1
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true }}
+    }
+});
+
+</script>
+
+</body>
+</html>

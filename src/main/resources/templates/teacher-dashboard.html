@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Преподаватель · Дашборд</title>
+
+    <link rel="stylesheet" href="/dashboard.css?v=10">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            Student System
+            <div><span>Преподаватель</span></div>
+        </div>
+
+        <div>
+            <div class="nav-section-title">Навигация</div>
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a class="active" th:href="@{/teacher/dashboard}">Студенты и оценки</a>
+                </li>
+
+                <li class="nav-item">
+                    <a th:href="@{/teacher/analytics}">Аналитика</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-link" th:href="@{/logout}">Выйти из системы</a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <header class="main-header">
+            <div>
+                <div class="main-title">Студенты и средний балл</div>
+                <div class="main-subtitle">Выберите группу или студента</div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div class="top-pill" style="margin-right:8px;">
+                    Общий средний:
+                    <span class="value" th:text="${overallAvg} != null ? ${overallAvg} : '—'">—</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="top-actions">
+            <a class="top-btn" th:href="@{/teacher/dashboard}">Обновить</a>
+
+            <!-- FILTER BY GROUP -->
+            <form th:action="@{/teacher/dashboard}" method="get"
+                  style="display:flex; gap:8px; align-items:center; margin-left:8px;">
+
+                <select name="group" class="input" style="width:180px;">
+                    <option value="">Все группы</option>
+
+                    <!-- Вывод всех групп -->
+                    <option th:each="g : ${groups}"
+                            th:value="${g}"
+                            th:text="${g}"
+                            th:selected="${g == selectedGroup}">
+                    </option>
+                </select>
+
+                <button class="top-btn primary" type="submit">Применить</button>
+            </form>
+
+            <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <div class="tag-muted">Студентов: <strong th:text="${students.size()}">0</strong></div>
+            </div>
+        </div>
+
+        <!-- STUDENT TABLE -->
+        <section class="card table-card">
+            <div class="card-title">Список студентов</div>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Группа</th>
+                    <th>Средний итоговый (FINAL)</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="s : ${students}">
+                    <td th:text="${s.id}"></td>
+                    <td th:text="${s.fullname}"></td>
+                    <td th:text="${s.groupName}"></td>
+
+                    <td>
+                        <span th:if="${avgByStudent[s.id]} != null"
+                              th:text="${#numbers.formatDecimal(avgByStudent[s.id], 1, 2)}"></span>
+
+                        <span th:if="${avgByStudent[s.id]} == null"
+                              class="tag-muted">нет итогов</span>
+                    </td>
+
+                    <td>
+                        <a class="action-btn secondary"
+                           th:href="@{'/teacher/students/' + ${s.id} + '/journal'}">Журнал</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
